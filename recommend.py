@@ -57,3 +57,41 @@ class LaptopRecommendationSystem:
         return recommended_items
 
 
+
+    def perform_collaborative_filtering(self, df):
+        ratings_matrix = df[['1 stars', '2 stars', '3 stars', '4 stars', '5 stars']].values
+
+        item_similarity = cosine_similarity(ratings_matrix.T)
+
+        target_ratings = ratings_matrix.mean(axis=0)
+
+        weighted_ratings = np.dot(item_similarity.T, target_ratings) / np.sum(item_similarity, axis=1)
+
+        sorted_indices = np.argsort(weighted_ratings)[::-1]
+
+        return sorted_indices
+
+
+    def recommend_laptops(self, brand, color=None, battery_life=None, hard_disk_size=None, max_price=None):
+        filtered_df = self.filter_data(brand=brand, color=color, battery_life=battery_life, max_price=max_price)
+
+        collaborative_indices = self.perform_collaborative_filtering(filtered_df)
+        recommended_laptops = pd.DataFrame(columns=['Model', 'Price', 'Colour', 'Best Buy Link', 'RAM', 'Size'])    
+
+        for i, item_id in enumerate(collaborative_indices):
+            laptop_model = filtered_df.iloc[item_id]['Model']
+            laptop_price = filtered_df.iloc[item_id]['Price in India']
+            laptop_colour = filtered_df.iloc[item_id]['Colours']
+            laptop_bestbuylink = filtered_df.iloc[item_id]['link']
+            laptop_ram = filtered_df.iloc[item_id]['RAM']
+            laptop_size = filtered_df.iloc[item_id]['Size']
+
+            recommended_laptops.loc[i] = [laptop_model, laptop_price, laptop_colour, laptop_bestbuylink, laptop_ram, laptop_size]
+        return recommended_laptops
+
+
+path_to_csv_file = "C:\\Users\\anok1\\Desktop\\Git conti\\Recommendation-System\\Projectt.csv"
+recommendation_system = LaptopRecommendationSystem(path_to_csv_file)
+recommended_laptops = recommendation_system.recommend_laptops(brand='HP', color='Black', battery_life=5, max_price=50000)
+print("\nCollaborative Filtering Recommendations:")
+print(recommended_laptops)
